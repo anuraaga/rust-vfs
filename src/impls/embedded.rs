@@ -19,7 +19,7 @@ where
     T: RustEmbed + Send + Sync + Debug + 'static,
 {
     p: PhantomData<T>,
-    directory_map: HashMap<EmbeddedPath, HashSet<EmbeddedPath>>,
+    directory_map: HashMap<EmbeddedPath, Vec<EmbeddedPath>>,
     files: HashMap<EmbeddedPath, u64>,
 }
 
@@ -28,7 +28,7 @@ where
     T: RustEmbed + Send + Sync + Debug + 'static,
 {
     pub fn new() -> Self {
-        let mut directory_map: HashMap<EmbeddedPath, HashSet<EmbeddedPath>> = Default::default();
+        let mut directory_map: HashMap<EmbeddedPath, Vec<EmbeddedPath>> = Default::default();
         let mut files: HashMap<EmbeddedPath, u64> = Default::default();
         for file in T::iter() {
             let mut path = file.clone();
@@ -38,11 +38,11 @@ where
             );
             while let Some((prefix, suffix)) = rsplit_once_cow(&path, "/") {
                 let children = directory_map.entry(prefix.clone()).or_default();
-                children.insert(suffix);
+                children.push(suffix);
                 path = prefix;
             }
             let children = directory_map.entry("".into()).or_default();
-            children.insert(path);
+            children.push(path);
         }
         EmbeddedFS {
             p: PhantomData::default(),
